@@ -19,7 +19,7 @@ namespace ShopCartRecommendation
             var items = JsonSerializer.Deserialize<DataSet>(file);
             
 
-            items.Items = items.Items.Take(5000).ToArray();
+            //items.Items = items.Items.Take(5000).ToArray();
 
             var uniqueProductIds = items.Items.Select(x => x.ProductId).Distinct().ToList();
             var usersCount = items.Items.Select(x => x.UserId).Distinct().ToList();
@@ -45,7 +45,7 @@ namespace ShopCartRecommendation
 
                 Console.WriteLine($"Process productsCounter - {productsCounter++} of {uniqueProductIds.Count}");
 
-                Parallel.ForEach(uniqueProductIds, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (productId) =>
+                Parallel.ForEach(uniqueProductIds, new ParallelOptions { MaxDegreeOfParallelism = 5 }, (productId) =>
                 {
                     if (productId == uniqueProductId)
                         return;
@@ -93,6 +93,8 @@ namespace ShopCartRecommendation
                 {
                     for (var i = 0; i < listProductScore.Count; i++)
                     {
+                        if (Math.Abs(productsWithScore[i].Score) < 0.000000000001D)
+                            continue;
 
                         var serializedString = JsonSerializer.ToJsonString(productsWithScore[i]);
                         sw.WriteLine(serializedString);
