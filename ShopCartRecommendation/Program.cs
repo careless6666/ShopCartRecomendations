@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -21,14 +22,19 @@ namespace ShopCartRecommendation
             var uniqueProductIds = items.Items.Select(x=>x.ProductId).Distinct().ToList();
             var usersCount = items.Items.Select(x => x.UserId).Distinct().ToList();
 
+            var productUserGroup = items.Items.GroupBy(x => x.ProductId, x=>x.UserId).ToDictionary(x=>x.Key, x=>x.Distinct());
+
             var listProductScore = new ConcurrentBag<ProductScore>();
 
             var productsCounter = 0;
 
             foreach (var uniqueProductId in uniqueProductIds)
             {
-                var boughtUsers = items.Items.Where(x => x.ProductId == uniqueProductId).Select(x=>x.UserId).Distinct().ToList();
-
+                //var boughtUsers = items.Items.Where(x => x.ProductId == uniqueProductId).Select(x=>x.UserId).Distinct().ToList();
+                productUserGroup.TryGetValue(uniqueProductId, out var boughtUsers);
+                if (boughtUsers == null)
+                    boughtUsers = new List<string>();
+                
                 Console.WriteLine($"Process productsCounter - {productsCounter++} of {uniqueProductIds.Count}");
 
                 Parallel.ForEach(uniqueProductIds, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (productId) =>
@@ -36,9 +42,8 @@ namespace ShopCartRecommendation
                     if (productId == uniqueProductId)
                         return;
 
-                    var boughtUsers2 = items.Items.Where(x => x.ProductId == productId).Select(x => x.UserId).Distinct().ToList();
-
-                    var commonUsers = boughtUsers.Intersect(boughtUsers2).Count();
+                    //var boughtUsers2 = items.Items.Where(x => x.ProductId == productId).Select(x => x.UserId).Distinct().ToList();
+                    var commonUsers = productUserGroup.TryGetValue(productId, out var boughtUsers2) ? boughtUsers.Intersect(boughtUsers2).Count() : 0;
                     var scrore = commonUsers / (double)usersCount.Count;
 
                     listProductScore.Add(new ProductScore
