@@ -2,8 +2,10 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using JsonSerializer = Utf8Json.JsonSerializer;
 
 namespace ShopCartRecommendation
 {
@@ -12,9 +14,9 @@ namespace ShopCartRecommendation
         static void Main(string[] args)
         {
             var file =  File.ReadAllText(@"D:\Dataset\up_ds3.json");
-            var items = JsonConvert.DeserializeObject<DataSet>(file);
+            var items = JsonSerializer.Deserialize<DataSet>(file);
 
-            //items.Items = items.Items.Take(5000).ToArray();
+            items.Items = items.Items.Take(5000).ToArray();
 
             var uniqueProductIds = items.Items.Select(x=>x.ProductId).Distinct().ToList();
             var usersCount = items.Items.Select(x => x.UserId).Distinct().ToList();
@@ -48,7 +50,14 @@ namespace ShopCartRecommendation
                 });
             }
 
-            File.WriteAllText($"ds-calc-result-{DateTime.Now:yy-MM-dd-HH-mm}.txt", JsonConvert.SerializeObject(listProductScore.OrderByDescending(x => x.Score).ToList()));
+            using (var fs = File.OpenWrite($"ds-calc-result-{DateTime.Now:yy-MM-dd-HH-mm}.txt"))
+            {
+                JsonSerializer.Serialize(fs, listProductScore.OrderByDescending(x => x.Score).ToList());
+            }
+
+            //JsonSerializer.Serialize(stream, p2);
+
+            //File.WriteAllText($"ds-calc-result-{DateTime.Now:yy-MM-dd-HH-mm}.txt", JsonConvert.SerializeObject());
             
             Console.WriteLine("Finish");
         }
@@ -62,11 +71,11 @@ namespace ShopCartRecommendation
 
     public class UserProductModel
     {
-        [JsonProperty("user_id")]
+        [DataMember(Name = "user_id")]
         public string UserId { get; set; }
-        [JsonProperty("product_id")]
+        [DataMember(Name = "product_id")]
         public string ProductId { get; set; }
-        [JsonProperty("categories")]
+        [DataMember(Name = "categories")]
         public string Categories { get; set; }
     }
 
