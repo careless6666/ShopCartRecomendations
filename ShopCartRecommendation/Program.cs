@@ -122,8 +122,11 @@ namespace ShopCartRecommendation
 
     public class ProductScore
     {
+        [DataMember(Name = "p1")]
         public string Product1 { get; set; }
+        [DataMember(Name = "p2")]
         public string Product2 { get; set; }
+        [DataMember(Name = "s")]
         public double Score { get; set; }
     }
 
