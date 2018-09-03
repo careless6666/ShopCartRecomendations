@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,21 +11,23 @@ namespace ShopCartRecommendation
     {
         static void Main(string[] args)
         {
-            var file =  File.ReadAllText(@"C:\Users\Akex\Documents\up_ds2.json");
+            var file =  File.ReadAllText(@"D:\Dataset\up_ds3.json");
             var items = JsonConvert.DeserializeObject<DataSet>(file);
 
-            items.Items = items.Items.Take(5000).ToArray();
+            //items.Items = items.Items.Take(5000).ToArray();
 
             var uniqueProductIds = items.Items.Select(x=>x.ProductId).Distinct().ToList();
             var usersCount = items.Items.Select(x => x.UserId).Distinct().ToList();
 
             var listProductScore = new ConcurrentBag<ProductScore>();
 
+            var productsCounter = 0;
+
             foreach (var uniqueProductId in uniqueProductIds)
             {
                 var boughtUsers = items.Items.Where(x => x.ProductId == uniqueProductId).Select(x=>x.UserId).Distinct().ToList();
 
-                Console.WriteLine($"product {uniqueProductId} buy {boughtUsers.Count}");
+                Console.WriteLine($"Process productsCounter - {productsCounter++} of {uniqueProductIds.Count}");
 
                 Parallel.ForEach(uniqueProductIds, new ParallelOptions { MaxDegreeOfParallelism = 4 }, (productId) =>
                 {
@@ -47,11 +48,8 @@ namespace ShopCartRecommendation
                 });
             }
 
-            foreach (var productScore in listProductScore.OrderByDescending(x=>x.Score))
-            {
-                Console.WriteLine($"Product1 - {productScore.Product1} Product2 - {productScore.Product2} score - {productScore.Score}");
-            }
-
+            File.WriteAllText($"ds-calc-result-{DateTime.Now:yy-MM-dd-HH-mm}.txt", JsonConvert.SerializeObject(listProductScore.OrderByDescending(x => x.Score).ToList()));
+            
             Console.WriteLine("Finish");
         }
     }
