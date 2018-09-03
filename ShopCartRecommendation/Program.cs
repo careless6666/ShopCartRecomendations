@@ -68,6 +68,8 @@ namespace ShopCartRecommendation
         public string UserId { get; set; }
         [JsonProperty("product_id")]
         public string ProductId { get; set; }
+        [JsonProperty("categories")]
+        public string Categories { get; set; }
     }
 
     public class ProductScore
